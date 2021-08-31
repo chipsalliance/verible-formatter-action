@@ -18,7 +18,7 @@ name: Verible formatter example
 on:
   pull_request:
 jobs:
-  lint:
+  format:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
