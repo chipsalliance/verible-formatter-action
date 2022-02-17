@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - uses: chipsalliance/verible-format-action@main
+    - uses: chipsalliance/verible-formatter-action@main
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
