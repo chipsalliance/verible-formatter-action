@@ -32,7 +32,7 @@ Directories will be searched recursively for ``*.v`` and ``*.sv`` files.
 ``paths`` defaults to ``'.'``.
 
 ```yaml
-- uses: chipsalliance/verible-format-action@main
+- uses: chipsalliance/verible-formatter-action@main
   with:
     paths: |
       ./rtl
