@@ -2,6 +2,10 @@ name: 'verible-formatter'
 description: 'This action formats Verilog/SystemVerilog code'
 author: 'Antmicro'
 inputs:
+  parameters:
+    description: 'Additional parameters to set flags for formatting'
+    required: false
+    default: ''
   paths:
     description: 'Optional array of paths to directories with source code to format'
     required: false
@@ -49,7 +53,7 @@ runs:
             export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/event.json
         fi
 
-        verible-verilog-format --inplace ${{ inputs.paths }} > /dev/null 2>&1
+        verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.paths }} > /dev/null 2>&1
         rm -rf verible
         tmp_file=$(mktemp)
         git diff >"${tmp_file}"
