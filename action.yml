@@ -6,8 +6,8 @@ inputs:
     description: 'Additional parameters to set flags for formatting'
     required: false
     default: ''
-  paths:
-    description: 'Optional array of paths to directories with source code to format'
+  files:
+    description: 'Optional array of files with source code to format'
     required: false
     default: './**/*.{v,sv}'
   github_token:
@@ -54,7 +54,7 @@ runs:
         fi
 
         shopt -s globstar nullglob
-        verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.paths }} > /dev/null 2>&1
+        verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.files }} > /dev/null 2>&1
         rm -rf verible
         tmp_file=$(mktemp)
         git diff >"${tmp_file}"
