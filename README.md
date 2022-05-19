@@ -13,6 +13,7 @@ The GitHub Token input is used to provide
 access to the PR.
 
 Here's a basic example to format all ``*.v`` and ``*.sv`` files:
+
 ```yaml
 name: Verible formatter example
 on:
@@ -27,16 +28,32 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-You can provide ``paths`` argument to point files to format.
-Directories will be searched recursively for ``*.v`` and ``*.sv`` files.
-``paths`` defaults to ``'.'``.
+You can provide the ``files`` argument to point to files to format.
+To search recursively for ``*.v`` and ``*.sv`` files, you can use the ``globstar`` option.
+
+By default ``files`` has the value ``'./**/*.{v,sv}'``.
 
 ```yaml
 - uses: chipsalliance/verible-formatter-action@main
   with:
-    paths: |
-      ./rtl
-      ./shared
+    files:
+      ./rtl/my_file.sv
+      ./rtl/module/*.sv
+      ./testbench/**/*.{v,sv}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Additionally, you can add various flags to the formatter with the ``parameter`` input:
+
+```yaml
+- uses: chipsalliance/verible-formatter-action@main
+  with:
+    files:
+      ./design/**/*.{v,sv}
+    parameters:
+      --indentation_spaces 4
+      --module_net_variable_alignment=preserve
+      --case_items_alignment=preserve
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
