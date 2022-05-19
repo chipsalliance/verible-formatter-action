@@ -9,7 +9,7 @@ inputs:
   paths:
     description: 'Optional array of paths to directories with source code to format'
     required: false
-    default: '.'
+    default: './**/*.{v,sv}'
   github_token:
     description: 'GITHUB_TOKEN'
     default: ''
@@ -53,6 +53,7 @@ runs:
             export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/event.json
         fi
 
+        shopt -s globstar nullglob
         verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.paths }} > /dev/null 2>&1
         rm -rf verible
         tmp_file=$(mktemp)
