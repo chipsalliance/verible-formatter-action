@@ -28,10 +28,11 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-You can provide the ``files`` argument to point to files to format.
-To search recursively for ``*.v`` and ``*.sv`` files, you can use the ``globstar`` option.
+You can specify the files to format by setting the ``files`` argument to a whitespace-separated list of file patterns.
+The patterns are [unix-like globs](https://en.wikipedia.org/wiki/Glob_(programming)#Unix-like) with support for ** (bash's "globstar").
+To recursively search for ``*.v`` and ``*.sv`` files in the `my_design` folder, you can set `files` to ``'my_design/**/*.{v,sv}'``
 
-By default ``files`` has the value ``'./**/*.{v,sv}'``.
+By default ``files`` has the value ``'./**/*.{v,sv}'``. This searches for all ``*.v`` and ``*.sv`` files in the repository.
 
 ```yaml
 - uses: chipsalliance/verible-formatter-action@main
@@ -43,7 +44,7 @@ By default ``files`` has the value ``'./**/*.{v,sv}'``.
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-Additionally, you can add various flags to the formatter with the ``parameter`` input:
+Additionally, you can add various flags to the formatter with the ``parameters`` input:
 
 ```yaml
 - uses: chipsalliance/verible-formatter-action@main

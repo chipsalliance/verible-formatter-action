@@ -3,7 +3,7 @@ description: 'This action formats Verilog/SystemVerilog code'
 author: 'Antmicro'
 inputs:
   parameters:
-    description: 'Additional parameters to set flags for formatting'
+    description: 'Additional parameters passed to formatter executable'
     required: false
     default: ''
   files:
