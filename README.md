@@ -13,6 +13,7 @@ The GitHub Token input is used to provide
 access to the PR.
 
 Here's a basic example to format all ``*.v`` and ``*.sv`` files:
+
 ```yaml
 name: Verible formatter example
 on:
@@ -27,16 +28,33 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
-You can provide ``paths`` argument to point files to format.
-Directories will be searched recursively for ``*.v`` and ``*.sv`` files.
-``paths`` defaults to ``'.'``.
+You can specify the files to format by setting the ``files`` argument to a whitespace-separated list of file patterns.
+The patterns are [unix-like globs](https://en.wikipedia.org/wiki/Glob_(programming)#Unix-like) with support for ** (bash's "globstar").
+To recursively search for ``*.v`` and ``*.sv`` files in the `my_design` folder, you can set `files` to ``'my_design/**/*.{v,sv}'``
+
+By default ``files`` has the value ``'./**/*.{v,sv}'``. This searches for all ``*.v`` and ``*.sv`` files in the repository.
 
 ```yaml
 - uses: chipsalliance/verible-formatter-action@main
   with:
-    paths: |
-      ./rtl
-      ./shared
+    files:
+      ./rtl/my_file.sv
+      ./rtl/module/*.sv
+      ./testbench/**/*.{v,sv}
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+Additionally, you can add various flags to the formatter with the ``parameters`` input:
+
+```yaml
+- uses: chipsalliance/verible-formatter-action@main
+  with:
+    files:
+      ./design/**/*.{v,sv}
+    parameters:
+      --indentation_spaces 4
+      --module_net_variable_alignment=preserve
+      --case_items_alignment=preserve
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
