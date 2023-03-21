@@ -20,7 +20,7 @@ runs:
       shell: bash
     - run: sudo apt install -y python3 wget python3-click golang-go
       shell: bash
-    - run: mkdir verible && curl -s https://api.github.com/repos/chipsalliance/verible/releases/latest | jq '.assets[] | select(.browser_download_url | contains("Ubuntu-20.04")).browser_download_url' | xargs wget -qO- | tar -zxvf - -C verible --strip-components=1
+    - run: mkdir verible && curl -s https://api.github.com/repos/chipsalliance/verible/releases/latest | jq '.assets[] | select(.browser_download_url | test("(?=.*Ubuntu-20.04)(?=.*x86_64)")).browser_download_url' | xargs wget -qO- | tar -zxvf - -C verible --strip-components=1
       shell: bash
     - run:  for i in $PWD/verible/bin/*; do sudo ln -s $i /bin/$(basename $i); done
       shell: bash
