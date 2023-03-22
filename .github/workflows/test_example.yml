@@ -1,10 +1,13 @@
-name: Verible formatter example
-on: [pull_request, push]
+name: Self-test
+on: [pull_request]
+# on: [pull_request, push]
 jobs:
-  format:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@master
-    - uses: chipsalliance/verible-formatter-action@main
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+  self-test:
+      runs-on: ubuntu-latest
+      steps:
+      # Checks out the verible-formatter-action on the source branch of the PR, which triggered action
+      - uses: actions/checkout@master
+      # Runs action.yml in the checked out repo
+      - uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
