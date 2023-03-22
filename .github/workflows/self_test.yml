@@ -1,0 +1,12 @@
+name: Self-test
+on: [pull_request]
+jobs:
+  self-test:
+      runs-on: ubuntu-latest
+      steps:
+      # Checks out the verible-formatter-action on the source branch of the PR, which triggered action
+      - uses: actions/checkout@master
+      # Runs action.yml in the checked out repo
+      - uses: ./
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
