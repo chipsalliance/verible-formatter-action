@@ -73,7 +73,7 @@ runs:
         -diff="$diff_cmd" \
         -fail-on-error="false" <"${tmp_file}" || true
 
-        if [ ${{ inputs.check_all_codebase }} == "True" ]; then
+        if [ "${{ inputs.check_all_codebase }}" == "true" ]; then
           if [ -s "${tmp_file}" ]; then
             echo "Found code non-compliant with formatting rules!"
             exit 1
