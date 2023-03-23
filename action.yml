@@ -13,7 +13,7 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN'
     default: ''
-  check_all_codebase:
+  fail_on_formatting_suggestions:
     description: 'If there are any formatting issues in the codebase, the action will return with an error'
     required: false
     default: 'false'
@@ -73,7 +73,7 @@ runs:
         -diff="$diff_cmd" \
         -fail-on-error="false" <"${tmp_file}" || true
 
-        if [ "${{ inputs.check_all_codebase }}" == "true" ]; then
+        if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
           if [ -s "${tmp_file}" ]; then
             echo "Found code non-compliant with formatting rules!"
             exit 1
