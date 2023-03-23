@@ -13,6 +13,10 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN'
     default: ''
+  fail_on_formatting_suggestions:
+    description: 'If there are any formatting issues in the codebase, the action will return with an error'
+    required: false
+    default: 'false'
 runs:
   using: 'composite'
   steps:
@@ -68,6 +72,17 @@ runs:
         -level="info" \
         -diff="$diff_cmd" \
         -fail-on-error="false" <"${tmp_file}" || true
+
+        if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
+          if [ -s "${tmp_file}" ]; then
+            echo "Found code non-compliant with formatting rules!"
+            exit 1
+          else
+            echo "Codebase is compliant with formatting rules"
+          fi
+        else
+          echo "Not reporting checks for files, which are not in current PR."
+        fi
 
         echo "done running reviewdog"
         cat "${tmp_file}" | wc
