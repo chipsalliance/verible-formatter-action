@@ -44,6 +44,17 @@ By default ``files`` has the value ``'./**/*.{v,sv}'``. This searches for all ``
     github_token: ${{ secrets.GITHUB_TOKEN }}
 ```
 
+If you want to declare Verible version to be used,
+you can pass its release tag in the input ``verible_version``:
+
+```yaml
+- uses: actions/checkout@master
+- uses: chipsalliance/verible-formatter-action@main
+  with:
+    verible_version: "v0.0-3100-gd75b1c47"
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+```
+
 Additionally, you can add various flags to the formatter with the ``parameters`` input:
 
 ```yaml

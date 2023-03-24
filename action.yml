@@ -17,44 +17,39 @@ inputs:
     description: 'If there are any formatting issues in the codebase, the action will return with an error'
     required: false
     default: 'false'
+  verible_version:
+    description: 'Use selected Verible version (defaults to latest release)'
+    default: 'latest'
+
 runs:
   using: 'composite'
   steps:
-    - run: sudo apt update
+    - name: Install dependencies
       shell: bash
-    - run: sudo apt install -y python3 wget python3-click golang-go
-      shell: bash
-    - run: mkdir verible && curl -s https://api.github.com/repos/chipsalliance/verible/releases/latest | jq '.assets[] | select(.browser_download_url | test("(?=.*Ubuntu-20.04)(?=.*x86_64)")).browser_download_url' | xargs wget -qO- | tar -zxvf - -C verible --strip-components=1
-      shell: bash
-    - run:  for i in $PWD/verible/bin/*; do sudo ln -s $i /bin/$(basename $i); done
-      shell: bash
-    - name: Install reviewdog
       run: |
-        git clone https://github.com/reviewdog/reviewdog
-        cd reviewdog
-        git checkout 72c205e138df049330f2a668c33782cda55d61f6
-        git apply ${{ github.action_path }}/reviewdog.patch
-        mkdir ../bin
-        go build all
-        GOBIN=`pwd`/../bin go install ./cmd/reviewdog
-        cd ..
-        rm -rf reviewdog
-        ./bin/reviewdog --version
+          sudo apt-get update -qq
+          sudo apt-get -y install --no-install-recommends git python3 python3-click
+    - name: Install Verible
+      uses: chipsalliance/verible-actions-common/install-verible@main
+      with:
+        github_token: ${{ inputs.github_token }}
+        verible_version: ${{ inputs.verible_version }}
+    - name: Install reviewdog
+      uses: chipsalliance/verible-actions-common/build-reviewdog@main
+    - name: Run Verible formatter with reviewdog
       shell: bash
-    - run: |
+      run: |
         event_file=event.json
-        diff_cmd="git diff FECH_HEAD"
+        diff_cmd="git diff FETCH_HEAD"
         if [ -f "$event_file" ]; then
-            pr_branch=$(cat event.json | \
-            python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['head']['ref'])")
-            base_branch=$(cat event.json | \
-            python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['base']['ref'])")
+            pr_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['head']['ref'])" < $event_file)
+            base_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['base']['ref'])" < $event_file)
             git fetch origin $pr_branch
             git checkout $pr_branch
             echo "the PR branch is $pr_branch"
             echo "the base branch is $base_branch"
             diff_cmd="git diff $base_branch $pr_branch"
-            export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/event.json
+            export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/$event_file
         fi
 
         shopt -s globstar nullglob
@@ -65,7 +60,7 @@ runs:
         git stash
         export REVIEWDOG_GITHUB_API_TOKEN="${{ inputs.github_token }}"
         echo "running reviewdog"
-        ./bin/reviewdog -name="verible-verilog-format" \
+        reviewdog -name="verible-verilog-format" \
         -f=diff -f.diff.strip=1 \
         -reporter="github-pr-review" \
         -filter-mode="diff_context" \
@@ -89,5 +84,3 @@ runs:
         if [ -f "$event_file" ]; then
             git checkout -
         fi
-
-      shell: bash
