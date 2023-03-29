@@ -74,62 +74,25 @@ Automatic review on PRs from external repositories
 
 In GitHub Actions, workflows triggered by external repositories may only have
 [read access to the main repository](https://docs.github.com/en/actions/reference/authentication-in-a-workflow#permissions-for-the-github_token).
-In order to have automatic reviews on external PRs, you need to create two workflows.
-One will be triggered on ``pull_request`` and upload the data needed by reviewdog as an artifact.
-The artifact shall store the file pointed by ``$GITHUB_EVENT_PATH`` as ``event.json``.
-The other workflow will download the artifact and use the Verible action.
-
-For example:
-```yaml
-name: upload-event-file
-on:
-  pull_request:
-
-...
-      - run: cp "$GITHUB_EVENT_PATH" ./event.json
-      - name: Upload event file as artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: event.json
-          path: event.json
-```
+In order to have automatic reviews on external PRs, you need to change your workflow to trigger
+on ``pull_request_target`` event and manually check out changes from pull request:
 
 ```yaml
-name: review-triggered
+name: Verible formatter example
 on:
-  workflow_run:
-    workflows: ["upload-event-file"]
-    types:
-      - completed
+  pull_request_target:
 
 jobs:
-  review_triggered:
+  format:
     runs-on: ubuntu-latest
+    permissions:
+      checks: write
+      contents: read
+      pull-requests: write
     steps:
-      - uses: actions/checkout@v2
-      - name: 'Download artifact'
-        id: get-artifacts
-        uses: actions/github-script@v3.1.0
+      - uses: actions/checkout@v3
         with:
-          script: |
-            var artifacts = await github.actions.listWorkflowRunArtifacts({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               run_id: ${{github.event.workflow_run.id }},
-            });
-            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
-              return artifact.name == "event.json"
-            })[0];
-            var download = await github.actions.downloadArtifact({
-               owner: context.repo.owner,
-               repo: context.repo.repo,
-               artifact_id: matchArtifact.id,
-               archive_format: 'zip',
-            });
-            var fs = require('fs');
-            fs.writeFileSync('${{github.workspace}}/event.json.zip', Buffer.from(download.data));
-      - run: |
-          unzip event.json.zip
+          ref: ${{ github.event.pull_request.head.sha }}
       - name: Run Verible formatter action
         uses: chipsalliance/verible-formatter-action@main
         with:
