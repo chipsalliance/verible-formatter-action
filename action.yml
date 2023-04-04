@@ -30,13 +30,13 @@ runs:
           source /etc/os-release
           case "$ID" in
             ubuntu) echo 'Running on Ubuntu Linux'; exit 0 ;;
-                 *) echo 'Not running on Ubuntu Linux'; exit 1 ;; 
+                 *) echo 'Not running on Ubuntu Linux'; exit 1 ;;
           esac
     - name: Install dependencies
       shell: bash
       run: |
           sudo apt-get update -qq
-          sudo apt-get -y install --no-install-recommends git python3 python3-click
+          sudo apt-get -y install --no-install-recommends git
     - name: Install Verible
       uses: chipsalliance/verible-actions-common/install-verible@main
       with:
@@ -47,48 +47,91 @@ runs:
     - name: Run Verible formatter with reviewdog
       shell: bash
       run: |
-        event_file=event.json
-        diff_cmd="git diff FETCH_HEAD"
-        if [ -f "$event_file" ]; then
-            pr_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['head']['ref'])" < $event_file)
-            base_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['base']['ref'])" < $event_file)
-            git fetch origin $pr_branch
-            git checkout $pr_branch
-            echo "the PR branch is $pr_branch"
-            echo "the base branch is $base_branch"
-            diff_cmd="git diff $base_branch $pr_branch"
-            export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/$event_file
-        fi
+        echo "### Run information ###"
+        echo "-----------------------"
+        echo "GITHUB_ACTION      : ${{ github.action }}"
+        echo "GITHUB_EVENT_NAME  : ${{ github.event_name }}"
+        echo "GITHUB_WORKSPACE   : ${{ github.workspace }}"
+        echo "artifact_path=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+        echo "ARTIFACT_PATH      : $artifact_path"
+        echo "# --- "
 
-        shopt -s globstar nullglob
-        verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.files }} > /dev/null 2>&1
-        rm -rf verible
-        tmp_file=$(mktemp)
-        git diff >"${tmp_file}"
-        git stash
-        export REVIEWDOG_GITHUB_API_TOKEN="${{ inputs.github_token }}"
-        echo "running reviewdog"
-        reviewdog -name="verible-verilog-format" \
-        -f=diff -f.diff.strip=1 \
-        -reporter="github-pr-review" \
-        -filter-mode="diff_context" \
-        -level="info" \
-        -diff="$diff_cmd" \
-        -fail-on-error="false" <"${tmp_file}" || true
-
-        if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
-          if [ -s "${tmp_file}" ]; then
-            echo "Found code non-compliant with formatting rules!"
-            exit 1
-          else
-            echo "Codebase is compliant with formatting rules"
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "### Prepare PR branch ###"
+          echo "-------------------------"
+          event_file=event.json
+          diff_cmd="git diff FETCH_HEAD"
+          if [ -f "$event_file" ]; then
+              pr_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['head']['ref'])" < $event_file)
+              base_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['base']['ref'])" < $event_file)
+              git fetch origin $pr_branch
+              git checkout $pr_branch
+              echo "PR branch   : $pr_branch"
+              echo "Base branch : $base_branch"
+              echo "# --- "
+              diff_cmd="git diff $base_branch $pr_branch"
+              export OVERRIDE_GITHUB_EVENT_PATH=`pwd`/$event_file
           fi
-        else
-          echo "Not reporting checks for files, which are not in current PR."
+          echo "# --- "
         fi
 
-        echo "done running reviewdog"
-        cat "${tmp_file}" | wc
-        if [ -f "$event_file" ]; then
-            git checkout -
+        echo "### Run Verible formatter ###"
+        echo "-----------------------------"
+        echo "PARAMETERS = ${{ inputs.parameters }}"
+        echo "FILES      = ${{ inputs.files }}"
+        shopt -s globstar nullglob
+        verible-verilog-format --inplace ${{ inputs.parameters }} ${{ inputs.files }} > /dev/null 2> $GITHUB_WORKSPACE/vvf_err.log
+        git diff > vvf_git_diff.log
+        git diff --name-only > vvf_files.log
+        git stash
+        echo "# --- "
+
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          echo "### Run reviewdog ###"
+          echo "---------------------"
+          export REVIEWDOG_GITHUB_API_TOKEN="${{ inputs.github_token }}"
+          echo "running reviewdog"
+          reviewdog -name="verible-verilog-format" \
+          -f=diff -f.diff.strip=1 \
+          -reporter="github-pr-review" \
+          -filter-mode="diff_context" \
+          -level="info" \
+          -diff="$diff_cmd" \
+          -fail-on-error="false" <vvf_git_diff.log || true
         fi
+
+        if [ "${{ github.event_name }}" == "push" ]; then
+          if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
+              if [[ -s "vvf_git_diff.log" || -s "vvf_err.log" ]]; then
+                echo "Either:"
+                echo "    - Found code non-compliant with formatting rules"
+                echo "Or:"
+                echo "    - The formatter returned with an error in processing of at least one file"
+                echo "Marking this workflow run as: FAIL"
+                echo "Check saved artifacts for more detailed logs."
+                exit 1
+              else
+                echo "Codebase is compliant with formatting rules: SUCCESS"
+              fi
+            else
+              echo "Checks for files, which are not in current PR: DISABLED"
+            fi
+            echo "# --- "
+        fi
+
+        echo "### Run summary ###"
+        echo "-------------------"
+        echo "The diff file contains the following number of:"
+        echo "newlines, words, bytes"
+        cat "vvf_git_diff.log" | wc
+        echo "# --- "
+    - name: Upload artifacts
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: vvf_logs
+        retention-days: 7
+        path: |
+          ${{ env.artifact_path }}/vvf_git_diff.log
+          ${{ env.artifact_path }}/vvf_files.log
+          ${{ env.artifact_path }}/vvf_err.log
