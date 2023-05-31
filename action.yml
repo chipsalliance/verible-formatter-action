@@ -56,14 +56,14 @@ runs:
         echo "ARTIFACT_PATH      : $artifact_path"
         echo "# --- "
 
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
+        if [ "${{ github.event_name }}" == "pull_request" ] || [ "${{ github.event_name }}" == "pull_request_target" ]; then
           echo "### Prepare PR branch ###"
           echo "-------------------------"
           event_file=event.json
           diff_cmd="git diff FETCH_HEAD"
           if [ -f "$event_file" ]; then
-              pr_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['head']['ref'])" < $event_file)
-              base_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['pull_request']['base']['ref'])" < $event_file)
+              pr_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['${{ github.event_name }}']['head']['ref'])" < $event_file)
+              base_branch=$(python3 -c "import sys, json; print(json.load(sys.stdin)['${{ github.event_name }}']['base']['ref'])" < $event_file)
               git fetch origin $pr_branch
               git checkout $pr_branch
               echo "PR branch   : $pr_branch"
@@ -86,7 +86,7 @@ runs:
         git stash
         echo "# --- "
 
-        if [ "${{ github.event_name }}" == "pull_request" ]; then
+        if [ "${{ github.event_name }}" == "pull_request" ] || [ "${{ github.event_name }}" == "pull_request_target" ]; then
           echo "### Run reviewdog ###"
           echo "---------------------"
           export REVIEWDOG_GITHUB_API_TOKEN="${{ inputs.github_token }}"
