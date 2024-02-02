@@ -100,24 +100,22 @@ runs:
           -fail-on-error="false" <vvf_git_diff.log || true
         fi
 
-        if [ "${{ github.event_name }}" == "push" ]; then
-          if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
-              if [[ -s "vvf_git_diff.log" || -s "vvf_err.log" ]]; then
-                echo "Either:"
-                echo "    - Found code non-compliant with formatting rules"
-                echo "Or:"
-                echo "    - The formatter returned with an error in processing of at least one file"
-                echo "Marking this workflow run as: FAIL"
-                echo "Check saved artifacts for more detailed logs."
-                exit 1
-              else
-                echo "Codebase is compliant with formatting rules: SUCCESS"
-              fi
+        if [ "${{ inputs.fail_on_formatting_suggestions }}" == "true" ]; then
+            if [[ -s "vvf_git_diff.log" || -s "vvf_err.log" ]]; then
+              echo "Either:"
+              echo "    - Found code non-compliant with formatting rules"
+              echo "Or:"
+              echo "    - The formatter returned with an error in processing of at least one file"
+              echo "Marking this workflow run as: FAIL"
+              echo "Check saved artifacts for more detailed logs."
+              exit 1
             else
-              echo "Checks for files, which are not in current PR: DISABLED"
+              echo "Codebase is compliant with formatting rules: SUCCESS"
             fi
-            echo "# --- "
+        else
+          echo "Checks for files, which are not in current PR: DISABLED"
         fi
+        echo "# --- "
 
         echo "### Run summary ###"
         echo "-------------------"
