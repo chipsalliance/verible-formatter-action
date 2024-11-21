@@ -13,6 +13,9 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN'
     default: ''
+  reviewdog_reporter:
+    description: '-reporter option to reviewdog'
+    default: 'github-pr-review'
   fail_on_formatting_suggestions:
     description: 'If there are any formatting issues in the codebase, the action will return with an error'
     required: false
@@ -93,7 +96,7 @@ runs:
           echo "running reviewdog"
           reviewdog -name="verible-verilog-format" \
           -f=diff -f.diff.strip=1 \
-          -reporter="github-pr-review" \
+          -reporter="${{ inputs.reviewdog_reporter }}" \
           -filter-mode="diff_context" \
           -level="info" \
           -diff="$diff_cmd" \
